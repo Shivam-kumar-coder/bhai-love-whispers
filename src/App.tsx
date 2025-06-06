@@ -8,6 +8,7 @@ import { SignupForm } from '@/components/auth/SignupForm';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Dashboard } from '@/pages/Dashboard';
 import { NewOrders } from '@/pages/NewOrders';
+import { Wallet } from '@/pages/Wallet';
 
 const AuthWrapper: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -41,7 +42,7 @@ const AppLayout: React.FC = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/new-orders" element={<NewOrders />} />
           <Route path="/my-orders" element={<div>My Orders - Coming Soon</div>} />
-          <Route path="/wallet" element={<div>Wallet - Coming Soon</div>} />
+          <Route path="/wallet" element={<Wallet />} />
           <Route path="/support" element={<div>Support - Coming Soon</div>} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
