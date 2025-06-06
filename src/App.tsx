@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -8,7 +7,9 @@ import { SignupForm } from '@/components/auth/SignupForm';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Dashboard } from '@/pages/Dashboard';
 import { NewOrders } from '@/pages/NewOrders';
+import { MyOrders } from '@/pages/MyOrders';
 import { Wallet } from '@/pages/Wallet';
+import { Support } from '@/pages/Support';
 
 const AuthWrapper: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -41,9 +42,9 @@ const AppLayout: React.FC = () => {
         <Routes>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/new-orders" element={<NewOrders />} />
-          <Route path="/my-orders" element={<div>My Orders - Coming Soon</div>} />
+          <Route path="/my-orders" element={<MyOrders />} />
           <Route path="/wallet" element={<Wallet />} />
-          <Route path="/support" element={<div>Support - Coming Soon</div>} />
+          <Route path="/support" element={<Support />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>
