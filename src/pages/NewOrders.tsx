@@ -87,7 +87,7 @@ export const NewOrders: React.FC = () => {
       // Check wallet balance first
       const { data: wallet, error: walletError } = await supabase
         .from('wallets')
-        .select('balance')
+        .select('balance, total_spent')
         .eq('user_id', user?.id)
         .single();
 
@@ -122,11 +122,12 @@ export const NewOrders: React.FC = () => {
       if (orderError) throw orderError;
 
       // Update wallet balance
+      const newTotalSpent = (wallet.total_spent || 0) + orderTotal;
       const { error: walletUpdateError } = await supabase
         .from('wallets')
         .update({ 
           balance: wallet.balance - orderTotal,
-          total_spent: (wallet.total_spent || 0) + orderTotal
+          total_spent: newTotalSpent
         })
         .eq('user_id', user?.id);
 

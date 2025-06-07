@@ -39,7 +39,7 @@ interface Order {
   quantity: number;
   target_url: string;
   price: number;
-  status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  status: string; // Changed from union type to string to match database
   start_count: number;
   remains: number;
   created_at: string;
