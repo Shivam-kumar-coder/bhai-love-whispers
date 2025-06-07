@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -10,61 +10,66 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ArrowUp, ArrowDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, RefreshCw, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 interface Transaction {
   id: string;
-  type: 'credit' | 'debit';
+  type: string;
   amount: number;
   description: string;
-  status: 'completed' | 'pending' | 'failed';
-  date: string;
+  status: string;
+  payment_method: string;
+  created_at: string;
 }
 
 export const TransactionHistory: React.FC = () => {
-  const transactions: Transaction[] = [
-    {
-      id: '1',
-      type: 'debit',
-      amount: -25.00,
-      description: 'Instagram Followers - Order #1001',
-      status: 'completed',
-      date: '2024-01-15T10:30:00Z'
-    },
-    {
-      id: '2',
-      type: 'credit',
-      amount: 100.00,
-      description: 'Wallet Top-up via Credit Card',
-      status: 'completed',
-      date: '2024-01-14T15:45:00Z'
-    },
-    {
-      id: '3',
-      type: 'debit',
-      amount: -15.00,
-      description: 'YouTube Likes - Order #1002',
-      status: 'completed',
-      date: '2024-01-13T09:15:00Z'
-    },
-    {
-      id: '4',
-      type: 'credit',
-      amount: 50.00,
-      description: 'Bonus Credit',
-      status: 'completed',
-      date: '2024-01-12T12:00:00Z'
-    }
-  ];
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  useEffect(() => {
+    if (user) {
+      fetchTransactions();
+    }
+  }, [user]);
+
+  const fetchTransactions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      setTransactions(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to load transaction history",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getTransactionIcon = (type: string) => {
+    switch (type) {
+      case 'add_funds':
+        return <TrendingUp className="h-4 w-4 text-green-600" />;
+      case 'order_payment':
+        return <TrendingDown className="h-4 w-4 text-red-600" />;
+      case 'refund':
+        return <RefreshCw className="h-4 w-4 text-blue-600" />;
+      default:
+        return <TrendingUp className="h-4 w-4 text-gray-600" />;
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -80,52 +85,94 @@ export const TransactionHistory: React.FC = () => {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const formatAmount = (amount: number, type: string) => {
+    const prefix = type === 'add_funds' || type === 'refund' ? '+' : '';
+    return `${prefix}$${Math.abs(amount).toFixed(2)}`;
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Transaction History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Transaction History</CardTitle>
-        <CardDescription>Your recent wallet transactions</CardDescription>
+        <CardDescription>
+          Recent wallet transactions and order payments
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Type</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transactions.map((transaction) => (
-              <TableRow key={transaction.id}>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    {transaction.type === 'credit' ? (
-                      <ArrowUp className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <ArrowDown className="h-4 w-4 text-red-600" />
-                    )}
-                    <span className="capitalize">{transaction.type}</span>
-                  </div>
-                </TableCell>
-                <TableCell>{transaction.description}</TableCell>
-                <TableCell>{formatDate(transaction.date)}</TableCell>
-                <TableCell>
-                  <Badge className={getStatusColor(transaction.status)}>
-                    {transaction.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className={`text-right font-medium ${
-                  transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {transaction.type === 'credit' ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
-                </TableCell>
+        {transactions.length === 0 ? (
+          <div className="text-center py-8">
+            <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">No transactions yet</h3>
+            <p className="text-muted-foreground">
+              Your transaction history will appear here
+            </p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Type</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Date</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {transactions.map((transaction) => (
+                <TableRow key={transaction.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {getTransactionIcon(transaction.type)}
+                      <span className="capitalize font-medium">
+                        {transaction.type.replace('_', ' ')}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{transaction.description}</TableCell>
+                  <TableCell className={`font-medium ${
+                    transaction.type === 'add_funds' || transaction.type === 'refund' 
+                      ? 'text-green-600' 
+                      : 'text-red-600'
+                  }`}>
+                    {formatAmount(transaction.amount, transaction.type)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(transaction.status)}>
+                      {transaction.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{formatDate(transaction.created_at)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </CardContent>
     </Card>
   );

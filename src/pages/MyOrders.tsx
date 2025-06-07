@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Search, Filter, Package, Clock, CheckCircle, XCircle, Eye } from 'lucide-react';
+import { Search, Filter, Package, Clock, CheckCircle, XCircle, Eye, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -29,87 +29,64 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 interface Order {
   id: string;
   service: string;
-  category: string;
   quantity: number;
-  target: string;
+  target_url: string;
   price: number;
   status: 'pending' | 'processing' | 'completed' | 'cancelled';
-  startCount: number;
+  start_count: number;
   remains: number;
-  dateCreated: string;
-  dateCompleted?: string;
+  created_at: string;
 }
 
 export const MyOrders: React.FC = () => {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  // Mock orders data
-  const orders: Order[] = [
-    {
-      id: '1001',
-      service: 'Instagram Followers',
-      category: 'Instagram',
-      quantity: 1000,
-      target: 'https://instagram.com/example',
-      price: 25.00,
-      status: 'completed',
-      startCount: 1520,
-      remains: 0,
-      dateCreated: '2024-01-15T10:30:00Z',
-      dateCompleted: '2024-01-16T14:20:00Z'
-    },
-    {
-      id: '1002',
-      service: 'YouTube Likes',
-      category: 'YouTube',
-      quantity: 500,
-      target: 'https://youtube.com/watch?v=example',
-      price: 15.00,
-      status: 'processing',
-      startCount: 245,
-      remains: 200,
-      dateCreated: '2024-01-16T09:15:00Z'
-    },
-    {
-      id: '1003',
-      service: 'TikTok Views',
-      category: 'TikTok',
-      quantity: 10000,
-      target: 'https://tiktok.com/@example',
-      price: 45.00,
-      status: 'pending',
-      startCount: 0,
-      remains: 10000,
-      dateCreated: '2024-01-16T15:45:00Z'
-    },
-    {
-      id: '1004',
-      service: 'Twitter Retweets',
-      category: 'Twitter',
-      quantity: 250,
-      target: 'https://twitter.com/example/status/123',
-      price: 12.50,
-      status: 'cancelled',
-      startCount: 45,
-      remains: 250,
-      dateCreated: '2024-01-14T11:20:00Z'
+  useEffect(() => {
+    if (user) {
+      fetchOrders();
     }
-  ];
+  }, [user]);
+
+  const fetchOrders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to load orders",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.service.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.id.includes(searchTerm) ||
-                         order.target.toLowerCase().includes(searchTerm.toLowerCase());
+                         order.target_url.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-    const matchesCategory = categoryFilter === 'all' || order.category === categoryFilter;
     
-    return matchesSearch && matchesStatus && matchesCategory;
+    return matchesSearch && matchesStatus;
   });
 
   const getStatusIcon = (status: string) => {
@@ -157,6 +134,14 @@ export const MyOrders: React.FC = () => {
     return Math.round(((order.quantity - order.remains) / order.quantity) * 100);
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -173,7 +158,7 @@ export const MyOrders: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-3">
             <div>
               <Label htmlFor="search">Search Orders</Label>
               <div className="relative">
@@ -202,27 +187,10 @@ export const MyOrders: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="category">Category</Label>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="Instagram">Instagram</SelectItem>
-                  <SelectItem value="YouTube">YouTube</SelectItem>
-                  <SelectItem value="TikTok">TikTok</SelectItem>
-                  <SelectItem value="Twitter">Twitter</SelectItem>
-                  <SelectItem value="Facebook">Facebook</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             <div className="flex items-end">
               <Button variant="outline" onClick={() => {
                 setSearchTerm('');
                 setStatusFilter('all');
-                setCategoryFilter('all');
               }}>
                 Clear Filters
               </Button>
@@ -255,7 +223,7 @@ export const MyOrders: React.FC = () => {
             <TableBody>
               {filteredOrders.map((order) => (
                 <TableRow key={order.id}>
-                  <TableCell className="font-medium">#{order.id}</TableCell>
+                  <TableCell className="font-medium">#{order.id.slice(0, 8)}</TableCell>
                   <TableCell>
                     <div>
                       <div className="font-medium">{order.service}</div>
@@ -288,9 +256,9 @@ export const MyOrders: React.FC = () => {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{formatDate(order.dateCreated)}</TableCell>
+                  <TableCell>{formatDate(order.created_at)}</TableCell>
                   <TableCell className="text-right font-medium">
-                    ${order.price.toFixed(2)}
+                    ${order.price?.toFixed(2)}
                   </TableCell>
                   <TableCell className="text-center">
                     <Dialog>
@@ -301,7 +269,7 @@ export const MyOrders: React.FC = () => {
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Order Details - #{order.id}</DialogTitle>
+                          <DialogTitle>Order Details - #{order.id.slice(0, 8)}</DialogTitle>
                           <DialogDescription>
                             Complete information about your order
                           </DialogDescription>
@@ -313,20 +281,16 @@ export const MyOrders: React.FC = () => {
                               <p className="font-medium">{order.service}</p>
                             </div>
                             <div>
-                              <Label>Category</Label>
-                              <p className="font-medium">{order.category}</p>
-                            </div>
-                            <div>
                               <Label>Quantity</Label>
                               <p className="font-medium">{order.quantity.toLocaleString()}</p>
                             </div>
                             <div>
                               <Label>Price</Label>
-                              <p className="font-medium">${order.price.toFixed(2)}</p>
+                              <p className="font-medium">${order.price?.toFixed(2)}</p>
                             </div>
                             <div>
                               <Label>Start Count</Label>
-                              <p className="font-medium">{order.startCount.toLocaleString()}</p>
+                              <p className="font-medium">{order.start_count.toLocaleString()}</p>
                             </div>
                             <div>
                               <Label>Remains</Label>
@@ -335,7 +299,7 @@ export const MyOrders: React.FC = () => {
                           </div>
                           <div>
                             <Label>Target URL</Label>
-                            <p className="font-medium break-all">{order.target}</p>
+                            <p className="font-medium break-all">{order.target_url}</p>
                           </div>
                           <div>
                             <Label>Status</Label>
@@ -346,17 +310,9 @@ export const MyOrders: React.FC = () => {
                               </div>
                             </Badge>
                           </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label>Date Created</Label>
-                              <p className="font-medium">{formatDate(order.dateCreated)}</p>
-                            </div>
-                            {order.dateCompleted && (
-                              <div>
-                                <Label>Date Completed</Label>
-                                <p className="font-medium">{formatDate(order.dateCompleted)}</p>
-                              </div>
-                            )}
+                          <div>
+                            <Label>Date Created</Label>
+                            <p className="font-medium">{formatDate(order.created_at)}</p>
                           </div>
                         </div>
                       </DialogContent>
@@ -372,12 +328,12 @@ export const MyOrders: React.FC = () => {
               <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">No orders found</h3>
               <p className="text-muted-foreground mb-4">
-                {searchTerm || statusFilter !== 'all' || categoryFilter !== 'all' 
+                {searchTerm || statusFilter !== 'all' 
                   ? 'Try adjusting your filters' 
                   : 'You haven\'t placed any orders yet'}
               </p>
-              {!searchTerm && statusFilter === 'all' && categoryFilter === 'all' && (
-                <Button variant="outline">
+              {!searchTerm && statusFilter === 'all' && (
+                <Button variant="outline" onClick={() => window.location.href = '/panel/new-orders'}>
                   Place Your First Order
                 </Button>
               )}

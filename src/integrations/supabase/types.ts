@@ -13,25 +13,37 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          price: number | null
           quantity: number | null
+          remains: number | null
           service: string | null
+          start_count: number | null
           status: string | null
+          target_url: string | null
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
+          price?: number | null
           quantity?: number | null
+          remains?: number | null
           service?: string | null
+          start_count?: number | null
           status?: string | null
+          target_url?: string | null
           user_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
+          price?: number | null
           quantity?: number | null
+          remains?: number | null
           service?: string | null
+          start_count?: number | null
           status?: string | null
+          target_url?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -44,27 +56,69 @@ export type Database = {
           },
         ]
       }
+      services: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          max_quantity: number
+          min_quantity: number
+          name: string
+          price: number
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_quantity?: number
+          min_quantity?: number
+          name: string
+          price: number
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_quantity?: number
+          min_quantity?: number
+          name?: string
+          price?: number
+        }
+        Relationships: []
+      }
       tickets: {
         Row: {
+          category: string | null
           created_at: string | null
           id: string
           message: string | null
+          priority: string | null
           status: string | null
           subject: string | null
           user_id: string | null
         }
         Insert: {
+          category?: string | null
           created_at?: string | null
           id?: string
           message?: string | null
+          priority?: string | null
           status?: string | null
           subject?: string | null
           user_id?: string | null
         }
         Update: {
+          category?: string | null
           created_at?: string | null
           id?: string
           message?: string | null
+          priority?: string | null
           status?: string | null
           subject?: string | null
           user_id?: string | null
@@ -78,6 +132,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          payment_id: string | null
+          payment_method: string | null
+          status: string | null
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          payment_id?: string | null
+          payment_method?: string | null
+          status?: string | null
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          payment_id?: string | null
+          payment_method?: string | null
+          status?: string | null
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       users: {
         Row: {
@@ -105,18 +195,24 @@ export type Database = {
           balance: number | null
           id: string
           last_updated: string | null
+          total_added: number | null
+          total_spent: number | null
           user_id: string | null
         }
         Insert: {
           balance?: number | null
           id?: string
           last_updated?: string | null
+          total_added?: number | null
+          total_spent?: number | null
           user_id?: string | null
         }
         Update: {
           balance?: number | null
           id?: string
           last_updated?: string | null
+          total_added?: number | null
+          total_spent?: number | null
           user_id?: string | null
         }
         Relationships: [
