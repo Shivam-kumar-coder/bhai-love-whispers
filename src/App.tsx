@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -10,6 +11,7 @@ import { NewOrders } from '@/pages/NewOrders';
 import { MyOrders } from '@/pages/MyOrders';
 import { Wallet } from '@/pages/Wallet';
 import { Support } from '@/pages/Support';
+import Index from '@/pages/Index';
 
 const AuthWrapper: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -45,7 +47,7 @@ const AppLayout: React.FC = () => {
           <Route path="/my-orders" element={<MyOrders />} />
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/support" element={<Support />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/panel" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>
     </div>
@@ -55,7 +57,30 @@ const AppLayout: React.FC = () => {
 const AppContent: React.FC = () => {
   const { isAuthenticated } = useAuth();
 
-  return isAuthenticated ? <AppLayout /> : <AuthWrapper />;
+  return (
+    <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/auth" element={<AuthWrapper />} />
+      <Route path="/panel/*" element={
+        isAuthenticated ? <AppLayout /> : <Navigate to="/auth" replace />
+      } />
+      <Route path="/dashboard" element={
+        isAuthenticated ? <Navigate to="/panel/dashboard" replace /> : <Navigate to="/auth" replace />
+      } />
+      <Route path="/new-orders" element={
+        isAuthenticated ? <Navigate to="/panel/new-orders" replace /> : <Navigate to="/auth" replace />
+      } />
+      <Route path="/my-orders" element={
+        isAuthenticated ? <Navigate to="/panel/my-orders" replace /> : <Navigate to="/auth" replace />
+      } />
+      <Route path="/wallet" element={
+        isAuthenticated ? <Navigate to="/panel/wallet" replace /> : <Navigate to="/auth" replace />
+      } />
+      <Route path="/support" element={
+        isAuthenticated ? <Navigate to="/panel/support" replace /> : <Navigate to="/auth" replace />
+      } />
+    </Routes>
+  );
 };
 
 const App = () => {
